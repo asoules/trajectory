@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Trajectory · Codex performance</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <div id="drawer-backdrop" hidden></div>
+      <aside class="sidebar" id="session-drawer" aria-label="Sessions" hidden>
+        <div class="drawer-actions">
+          <button
+            id="pin-sessions"
+            aria-pressed="false"
+            title="Keep sessions visible"
+          >
+            Pin sidebar</button
+          ><button id="close-sessions" aria-label="Close sessions">×</button>
+        </div>
+        <a class="brand" href="/"
+          ><svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path
+              d="M3 23V5h6v12h6V9h10"
+              stroke="currentColor"
+              stroke-width="3"
+            /></svg
+          ><span>trajectory<span class="brand-dot">.</span></span></a
+        >
+        <div class="workspace-label">SESSION EXPLORER <span>LOCAL</span></div>
+        <label class="search"
+          ><span>⌕</span
+          ><input
+            id="search"
+            placeholder="Find a session…"
+            aria-label="Search sessions"
+        /></label>
+        <div class="scope">
+          <button data-scope="all" class="active">All sessions</button
+          ><button data-scope="recent">Recent</button
+          ><button data-scope="archived">Archived</button>
+        </div>
+        <div class="list-heading">
+          <span>SESSIONS <span id="session-count">—</span></span
+          ><button
+            id="refresh-sessions"
+            title="Refresh sessions"
+            aria-label="Refresh sessions"
+          >
+            ↻
+          </button>
+        </div>
+        <div id="session-error" class="session-error" role="alert" hidden></div>
+        <nav id="sessions" aria-label="Sessions">
+          <p class="empty">Open the drawer to load sessions.</p>
+        </nav>
+        <button id="more-sessions" class="load hidden">
+          Load more sessions
+        </button>
+        <footer class="sidebar-footer">
+          <span class="dot"></span> Local session data
+          <button id="agent-help" title="Agent integration">⌘</button>
+        </footer>
+      </aside>
+      <main>
+        <header class="topbar">
+          <div class="top-navigation">
+            <button
+              id="open-sessions"
+              aria-controls="session-drawer"
+              aria-expanded="false"
+            >
+              Sessions <kbd>⌘K</kbd>
+            </button>
+            <div class="breadcrumb">trajectory / performance</div>
+          </div>
+          <div class="top-actions">
+            <span id="connection">Connecting</span
+            ><button id="refresh" title="Refresh now" aria-label="Refresh now">
+              ↻</button
+            ><button id="live-toggle" class="small">Pause refresh</button>
+          </div>
+        </header>
+        <div id="error" class="error hidden" role="alert"></div>
+        <div id="content">
+          <div class="empty welcome">
+            Select a session to explore its trajectory.
+          </div>
+        </div>
+      </main>
+    </div>
+    <aside
+      id="inspector"
+      class="inspector hidden"
+      aria-label="Span details"
+    ></aside>
+    <dialog id="help">
+      <div class="dialog-heading">
+        <h2>Review through the CLI</h2>
+        <button id="close-help" aria-label="Close">×</button>
+      </div>
+      <p>
+        The CLI presents the same ranked review and evidence as this viewer.
+      </p>
+      <pre id="cli-command"></pre>
+      <p>
+        Use <code>--json</code> for structured output. Use
+        <code>--since ISO_TIMESTAMP</code> to review new activity. Select an
+        operation and save an investigation to give an agent this exact
+        snapshot.
+      </p>
+    </dialog>
+    <dialog id="investigate-dialog" aria-labelledby="investigate-title">
+      <form id="investigate-form">
+        <div class="dialog-heading">
+          <h2 id="investigate-title">Investigate this operation</h2>
+          <button type="button" id="cancel-investigate" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <p id="investigate-operation"></p>
+        <label for="investigate-question">What looks suspicious?</label>
+        <textarea
+          id="investigate-question"
+          maxlength="2000"
+          rows="3"
+          placeholder="For example: why did this test run three times?"
+        ></textarea>
+        <p class="muted">
+          Save the displayed data, selection, and surrounding session evidence.
+          The agent will investigate that same snapshot.
+        </p>
+        <p id="investigate-error" role="alert" hidden></p>
+        <button type="submit" id="save-investigation">
+          Save investigation
+        </button>
+      </form>
+    </dialog>
+    <dialog id="handoff-dialog" aria-labelledby="handoff-title">
+      <div class="dialog-heading">
+        <h2 id="handoff-title">Ready for the agent</h2>
+        <button id="close-handoff" aria-label="Close">×</button>
+      </div>
+      <p>
+        Copy this handoff into your agent task, or run the CLI command directly.
+      </p>
+      <textarea
+        id="handoff-text"
+        rows="12"
+        readonly
+        aria-label="Investigation handoff"
+      ></textarea>
+      <button id="copy-handoff">Copy handoff</button
+      ><span id="copy-status" role="status"></span>
+    </dialog>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

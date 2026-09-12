@@ -1,0 +1,22 @@
+{
+  "name": "codex-trajectory",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "Local Codex performance explorer and agent-native profiler",
+  "scripts": {
+    "build": "sh scripts/build.sh",
+    "start": "./bin/trajectory serve",
+    "dev": "sh scripts/build.sh && ./bin/trajectory serve",
+    "test": "npm run build && node --test test/*.test.js",
+    "check": "node --check public/api.js && node --check public/app.js && node --check public/dom.js && node --check public/format.js && node --check public/inspector.js && node --check public/investigation.js && node --check public/overview.js && node --check public/review.js && node --check public/waterfall.js"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "devDependencies": {
+    "jsdom": "29.1.1",
+    "prettier": "^3.9.6"
+  }
+}

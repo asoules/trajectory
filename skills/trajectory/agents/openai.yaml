@@ -1,0 +1,4 @@
+interface:
+  display_name: "Trajectory"
+  short_description: "Review Codex task performance and saved evidence"
+  default_prompt: "Use $trajectory to review this task for avoidable time and token costs, and investigate the strongest evidence."
