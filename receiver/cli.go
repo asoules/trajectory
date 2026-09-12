@@ -16,6 +16,7 @@ import (
 const cliHelp = `Trajectory — local Codex performance review
 
 trajectory serve [-home DIR] [-db FILE] [-port 4318] [-demo]
+trajectory version
 trajectory review --session THREAD_ID [--since ISO] [--details] [--json]
 trajectory sessions [--q TEXT] [--limit 20]
 trajectory summary --session THREAD_ID [--top 8]

@@ -4,12 +4,41 @@ A local performance review for Codex tasks. Humans and CLI agents see the same
 ranked costs, uncertainty, and evidence. Start with **Review**, then investigate an
 operation in the timeline or save a snapshot for an agent.
 
-## Run
+## Install
+
+Trajectory publishes one self-contained executable for macOS and Linux on Intel
+and ARM. The installer downloads the matching archive, verifies its SHA-256
+checksum, and places `trajectory` in `~/.local/bin` without `sudo`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/asoules/trajectory/main/install.sh | sh
+```
+
+If that directory is not already on your shell path, add it:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Set `TRAJECTORY_INSTALL_DIR` to choose another destination, or
+`TRAJECTORY_VERSION` to install a particular release:
+
+```sh
+TRAJECTORY_INSTALL_DIR=/usr/local/bin sh install.sh
+TRAJECTORY_VERSION=v0.1.0 sh install.sh
+```
+
+The release binaries require macOS 13 or newer; Linux binaries are built natively
+on Ubuntu 22.04. `trajectory version` reports the release, source commit, and build
+date. Homebrew Core does not currently carry Trajectory; see
+[Releasing](docs/releasing.md) for the first-party tap plan.
+
+### Build from source
 
 ```sh
 sh scripts/build.sh  # Go 1.22+ and a C compiler
-./bin/trajectory serve  # http://127.0.0.1:4318
-./bin/trajectory serve -demo -port 4321
+mkdir -p "$HOME/.local/bin"
+install -m 0755 bin/trajectory "$HOME/.local/bin/trajectory"
 ```
 
 One Go executable includes the server, CLI, stdio MCP adapter, frontend, and
@@ -19,6 +48,13 @@ or container. Node is used only for frontend development and tests (22.13+ withi
 Put `bin/trajectory` on your PATH to use `trajectory` from any directory, or invoke
 its absolute path. `trajectory help` lists the commands. Existing invocations
 without a subcommand, such as `trajectory -port 4321`, still start the server.
+
+## Run
+
+```sh
+trajectory serve  # http://127.0.0.1:4318
+trajectory serve -demo -port 4321
+```
 
 The default source is `$CODEX_HOME` or `~/.codex`. Saved investigations use a stable
 user-data directory, independent of the working directory:

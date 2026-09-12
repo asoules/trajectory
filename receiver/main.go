@@ -17,6 +17,12 @@ import (
 	"time"
 )
 
+var (
+	version   = "dev"
+	commit    = "unknown"
+	buildDate = "unknown"
+)
+
 func main() {
 	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
 		writeJSON(os.Stderr, M{"error": err.Error()}, false)
@@ -27,6 +33,13 @@ func main() {
 func run(args []string, input io.Reader, output, diagnostics io.Writer) error {
 	if len(args) > 0 && (args[0] == "help" || args[0] == "--help" || args[0] == "-h") {
 		_, err := fmt.Fprint(output, cliHelp)
+		return err
+	}
+	if len(args) > 0 && (args[0] == "version" || args[0] == "--version") {
+		if len(args) != 1 {
+			return fmt.Errorf("version accepts no arguments")
+		}
+		_, err := fmt.Fprintf(output, "trajectory %s (commit %s, built %s)\n", version, commit, buildDate)
 		return err
 	}
 	// Keep the original no-subcommand server invocation working.

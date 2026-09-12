@@ -1,0 +1,169 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate semantic version tag
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: sh install.sh --check-version "$VERSION"
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.1"
+          cache: false
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Verify package version
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: test "v$(node -p "require('./package.json').version")" = "$VERSION"
+      - run: npm ci
+      - run: npm run check
+      - run: go test ./...
+      - run: go vet ./...
+      - run: npm test
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: verify
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin_amd64
+            runner: macos-15-intel
+            goos: darwin
+            goarch: amd64
+          - target: darwin_arm64
+            runner: macos-15
+            goos: darwin
+            goarch: arm64
+          - target: linux_amd64
+            runner: ubuntu-22.04
+            goos: linux
+            goarch: amd64
+          - target: linux_arm64
+            runner: ubuntu-22.04-arm
+            goos: linux
+            goarch: arm64
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.1"
+          cache: false
+      - name: Verify native target
+        env:
+          EXPECTED_GOOS: ${{ matrix.goos }}
+          EXPECTED_GOARCH: ${{ matrix.goarch }}
+        run: |
+          test "$(go env GOOS)" = "$EXPECTED_GOOS"
+          test "$(go env GOARCH)" = "$EXPECTED_GOARCH"
+      - name: Test
+        run: go test ./...
+      - name: Build and package
+        env:
+          VERSION: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          BUILD_DATE=$(git show -s --format=%cI "$COMMIT")
+          SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$COMMIT")
+          export BUILD_DATE SOURCE_DATE_EPOCH
+          if [ "$(go env GOOS)" = "darwin" ]; then
+            export MACOSX_DEPLOYMENT_TARGET=13.0
+          fi
+          sh scripts/build.sh
+          ./bin/trajectory version
+          cp bin/trajectory "${RUNNER_TEMP}/trajectory-first-build"
+          sh scripts/build.sh
+          cmp bin/trajectory "${RUNNER_TEMP}/trajectory-first-build"
+          go run ./scripts/releasearchive \
+            -output "dist/trajectory_${TARGET}.tar.gz" \
+            -epoch "$SOURCE_DATE_EPOCH"
+          go run ./scripts/releasearchive \
+            -output "dist/trajectory_${TARGET}.repeat.tar.gz" \
+            -epoch "$SOURCE_DATE_EPOCH"
+          cmp "dist/trajectory_${TARGET}.tar.gz" "dist/trajectory_${TARGET}.repeat.tar.gz"
+      - name: Verify macOS deployment target
+        if: matrix.goos == 'darwin'
+        run: otool -l bin/trajectory | grep -A3 LC_BUILD_VERSION | grep -q 'minos 13.0'
+      - name: Smoke-test packaged installer
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          cd dist
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "trajectory_${TARGET}.tar.gz" > checksums.txt
+          else
+            shasum -a 256 "trajectory_${TARGET}.tar.gz" > checksums.txt
+          fi
+          cd ..
+          TRAJECTORY_DOWNLOAD_ROOT="file://${PWD}/dist" \
+            TRAJECTORY_INSTALL_DIR="${RUNNER_TEMP}/trajectory-bin" \
+            sh install.sh
+          test "$("${RUNNER_TEMP}/trajectory-bin/trajectory" version)" = "$(./bin/trajectory version)"
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: trajectory-${{ matrix.target }}
+          path: dist/trajectory_${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download archives
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum trajectory_*.tar.gz > checksums.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          dist/trajectory_*.tar.gz dist/checksums.txt
+          --repo "$GITHUB_REPOSITORY"
+          --verify-tag
+          --title "Trajectory $GITHUB_REF_NAME"
+          --generate-notes

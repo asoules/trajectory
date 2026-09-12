@@ -44,6 +44,44 @@ func TestCLIHelpAndErrorsDoNotOpenDatabase(t *testing.T) {
 	}
 }
 
+func TestCLIVersionReportsReleaseMetadataWithoutOpeningDatabase(t *testing.T) {
+	previousVersion, previousCommit, previousDate := version, commit, buildDate
+	version, commit, buildDate = "v1.2.3", "abcdef123456", "2026-09-11T12:34:56Z"
+	t.Cleanup(func() {
+		version, commit, buildDate = previousVersion, previousCommit, previousDate
+	})
+
+	var output, diagnostics bytes.Buffer
+	if err := run([]string{"version"}, strings.NewReader(""), &output, &diagnostics); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := output.String(), "trajectory v1.2.3 (commit abcdef123456, built 2026-09-11T12:34:56Z)\n"; got != want {
+		t.Fatalf("version output %q != %q", got, want)
+	}
+	if diagnostics.Len() != 0 {
+		t.Fatalf("unexpected diagnostics: %s", diagnostics.String())
+	}
+}
+
+func TestCLIVersionFlagMatchesVersionCommand(t *testing.T) {
+	previousVersion, previousCommit, previousDate := version, commit, buildDate
+	version, commit, buildDate = "v1.2.3", "abcdef123456", "2026-09-11T12:34:56Z"
+	t.Cleanup(func() {
+		version, commit, buildDate = previousVersion, previousCommit, previousDate
+	})
+
+	var commandOutput, flagOutput bytes.Buffer
+	if err := run([]string{"version"}, strings.NewReader(""), &commandOutput, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"--version"}, strings.NewReader(""), &flagOutput, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if commandOutput.String() != flagOutput.String() {
+		t.Fatalf("--version output %q != version output %q", flagOutput.String(), commandOutput.String())
+	}
+}
+
 type cliRoundTripper func(*http.Request) (*http.Response, error)
 
 func (f cliRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }

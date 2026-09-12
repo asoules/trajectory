@@ -5,6 +5,16 @@ import { backend } from "./helpers/backend.js";
 import { cli } from "./helpers/cli.js";
 import { query, post } from "./helpers/client.js";
 
+test("compiled CLI version identifies its source revision", async () => {
+  const result = await cli(["version"]);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /^trajectory dev \(commit [0-9a-f]{12}(?:-dirty)?, built \d{4}-\d{2}-\d{2}T[^)]+\)\n$/,
+  );
+  assert.equal(result.stderr, "");
+});
+
 test("production pages, frozen revisions, and saved evidence share one backend", async (t) => {
   const { client } = await backend(t);
   await assert.rejects(() => query(client, "review", {}), /Select a task/);
