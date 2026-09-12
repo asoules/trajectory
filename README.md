@@ -7,8 +7,14 @@ operation in the timeline or save a snapshot for an agent.
 ## Install
 
 Trajectory publishes one self-contained executable for macOS and Linux on Intel
-and ARM. The installer downloads the matching archive, verifies its SHA-256
-checksum, and places `trajectory` in `~/.local/bin` without `sudo`:
+and ARM. Install it from the first-party Homebrew tap:
+
+```sh
+brew install asoules/tap/trajectory
+```
+
+Or use the standalone installer. It downloads the matching archive, verifies its
+SHA-256 checksum, and places `trajectory` in `~/.local/bin` without `sudo`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/asoules/trajectory/main/install.sh | sh
@@ -30,8 +36,8 @@ TRAJECTORY_VERSION=v0.1.0 sh install.sh
 
 The release binaries require macOS 13 or newer; Linux binaries are built natively
 on Ubuntu 22.04. `trajectory version` reports the release, source commit, and build
-date. Homebrew Core does not currently carry Trajectory; see
-[Releasing](docs/releasing.md) for the first-party tap plan.
+date. The tap formula and standalone installer use the same checksummed release
+archives.
 
 ### Build from source
 

@@ -33,19 +33,17 @@ Do not move or recreate a release tag. Publish a new patch version for correctio
 
 ## Homebrew
 
-No `trajectory` formula currently exists in Homebrew Core. A new project also
-lacks the stable release history and notability expected there, so the practical
-first step is a first-party tap.
-
-After the first GitHub release exists, create `asoules/homebrew-tap` with a
-`Formula/trajectory.rb` formula referencing the four immutable release archives
-and their SHA-256 values. The intended user command is:
+The first-party [`asoules/homebrew-tap`](https://github.com/asoules/homebrew-tap)
+publishes a `trajectory` formula referencing the four immutable release archives
+and their SHA-256 values. Users install it with:
 
 ```sh
 brew install asoules/tap/trajectory
 ```
 
-The formula test must exercise real behavior beyond `version` or `help`; start a
-demo server on a temporary port, request `/healthz`, and stop the process. Update
-and test the tap after each release. Consider Homebrew Core only after Trajectory
-has multiple stable releases and meaningful third-party usage.
+For each release, update all four formula URLs and SHA-256 values, then run
+`brew style`, `brew audit --strict --online --os=all --arch=all`, and
+`brew test`. The formula test must exercise real behavior beyond `version` or
+`help`: it starts a demo server on a temporary port, requests `/healthz`, and
+stops the process. Consider Homebrew Core only after Trajectory has multiple
+stable releases and meaningful third-party usage.
