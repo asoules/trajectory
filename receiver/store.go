@@ -27,14 +27,15 @@ const (
 var uuidRE = regexp.MustCompile(`[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}`)
 
 type sourceStore struct {
-	revisions revisionCache
-	demo      M
-	gate      chan struct{}
-	db        *database
-	home      string
-	scanned   time.Time
-	entries   []M
-	cache     map[string]*cachedRollout
+	revisions  revisionCache
+	demo       M
+	gate       chan struct{}
+	db         *database
+	home       string
+	claudeHome string
+	scanned    time.Time
+	entries    []M
+	cache      map[string]*cachedRollout
 }
 
 type cachedRollout struct {
@@ -123,6 +124,9 @@ func (s *sourceStore) discover(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+	if err := s.discoverClaude(ctx, &entries, &size); err != nil {
+		return err
 	}
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i]["updated_at"] == entries[j]["updated_at"] {
@@ -241,6 +245,10 @@ func (s *sourceStore) get(ctx context.Context, id string) (M, error) {
 	if cached == nil || info.Size() < cached.info.Size() || !os.SameFile(info, cached.info) || (info.Size() == cached.info.Size() && !info.ModTime().Equal(cached.info.ModTime())) {
 		s.reserve(key, maxTaskBytes)
 		cached = &cachedRollout{state: newState(), info: info}
+		if entry["agent_id"] != nil {
+			cached.state.Meta["agentId"] = entry["agent_id"]
+			cached.state.bytes += retainedSize(cached.state.Meta) - retainedSize(M{})
+		}
 		s.cache[key] = cached
 	}
 	cached.used = time.Now()
@@ -285,7 +293,11 @@ func (s *sourceStore) get(ctx context.Context, id string) (M, error) {
 				if json.Unmarshal(line, &r) != nil {
 					cached.state.Malformed++
 				} else {
-					cached.state.ingest(r)
+					if entry["source"] == "claude" {
+						cached.state.ingestClaude(r)
+					} else {
+						cached.state.ingest(r)
+					}
 					if cached.state.bytes > maxTaskBytes {
 						delete(s.cache, key)
 						return nil, apiError{413, "Task exceeds the 32 MiB parsed-data limit"}
@@ -314,7 +326,13 @@ func (s *sourceStore) get(ctx context.Context, id string) (M, error) {
 		return nil, err
 	}
 	session["threadId"] = choose(session["id"], entry["thread_id"])
-	session["id"], session["archived"], session["source"] = key, num(entry["archived"]) != 0, "rollout"
+	if entry["source"] == "claude" {
+		// Subagents carry the parent's sessionId in their transcript. Their
+		// catalog alias must remain separate from the main session's UUID.
+		session["threadId"] = entry["thread_id"]
+		session["parentId"], session["agentId"] = entry["parent_id"], entry["agent_id"]
+	}
+	session["id"], session["archived"], session["source"] = key, num(entry["archived"]) != 0, entry["source"]
 	if entry["title"] != entry["thread_id"] {
 		session["title"] = entry["title"]
 	} else {

@@ -673,6 +673,9 @@ func reviewReport(ctx context.Context, session M, args M, summary M, selected []
 		}
 		// One leaf's elapsed time is evidence of cost, not proof it blocked progress.
 		title, reason, action := "Long operation", "Recorded execution time; overlap may reduce its effect on elapsed time.", "Inspect the operation and overlapping work before changing the workflow."
+		if session["source"] == "claude" {
+			reason = "Recorded call/result interval, including scheduling and transport overhead; overlap may reduce its effect on elapsed time."
+		}
 		if g.failed > 0 {
 			title = "Failed work"
 			reason = "A recorded nonzero exit or tool error. Cancellation can also produce this status."
@@ -703,7 +706,11 @@ func reviewReport(ctx context.Context, session M, args M, summary M, selected []
 				evidence = append(evidence, str(v["id"]))
 			}
 		}
-		timeItems = append(timeItems, M{"id": hash(key, 24), "title": title, "label": operationLabel(g.items[0]), "recordedMs": math.Round(g.ms), "calls": len(g.items), "failures": g.failed, "reason": reason, "action": action, "evidence": evidence, "confidence": "measured cost; avoidability unproven"})
+		confidence := "measured cost; avoidability unproven"
+		if session["source"] == "claude" {
+			confidence = "inferred call/result timing; avoidability unproven"
+		}
+		timeItems = append(timeItems, M{"id": hash(key, 24), "title": title, "label": operationLabel(g.items[0]), "recordedMs": math.Round(g.ms), "calls": len(g.items), "failures": g.failed, "reason": reason, "action": action, "evidence": evidence, "confidence": confidence})
 	}
 	sort.Slice(timeItems, func(i, j int) bool {
 		if timeItems[i]["recordedMs"] == timeItems[j]["recordedMs"] {

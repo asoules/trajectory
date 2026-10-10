@@ -1,6 +1,6 @@
 # Contributing
 
-Trajectory is an early-stage local performance explorer for Codex sessions.
+Trajectory is an early-stage local performance explorer for Codex and Claude Code sessions.
 Small, focused bug fixes and improvements are welcome. For a substantial change,
 open an issue describing the problem and proposed behavior before building it.
 

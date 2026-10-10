@@ -16,6 +16,8 @@ export async function backend(t, { twoTurns = false, changes = false } = {}) {
     join(directory, "investigations.sqlite"),
     "-home",
     directory,
+    "-claude-home",
+    "",
   ];
   let session = "demo";
   if (twoTurns) {

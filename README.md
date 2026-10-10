@@ -1,6 +1,6 @@
 # Trajectory
 
-A local performance review for Codex tasks. Humans and CLI agents see the same
+A local performance review for Codex and Claude Code sessions. Humans and CLI agents see the same
 ranked costs, uncertainty, and evidence. Start with **Review**, then investigate an
 operation in the timeline or save a snapshot for an agent.
 
@@ -62,7 +62,11 @@ trajectory serve  # http://127.0.0.1:4318
 trajectory serve -demo -port 4321
 ```
 
-The default source is `$CODEX_HOME` or `~/.codex`. Saved investigations use a stable
+Codex discovery uses `$CODEX_HOME` or `~/.codex`. Claude Code discovery uses
+`$CLAUDE_CONFIG_DIR` or `~/.claude`, reading transcripts under `projects/`.
+Both sources appear in the Sessions drawer. Override Claude’s directory with
+`-claude-home /path/to/.claude`, or pass `-claude-home ''` to disable it.
+Saved investigations use a stable
 user-data directory, independent of the working directory:
 
 - macOS: `~/Library/Application Support/trajectory/investigations.sqlite`
@@ -164,10 +168,25 @@ Neither client rebuilds the ranking or independently chooses the review wording.
 Default text is compact; `--details` expands rationale and related evidence.
 `--json` returns structured data. Use `--url` to select a different backend.
 An explicit `--session` is required unless `--revision` is supplied. It accepts a
-rollout ID or a Codex thread UUID. There is no implicit `latest`. When a thread
+Trajectory session ID, a Codex thread UUID, or a Claude Code session UUID. There is no implicit `latest`. When a thread
 has multiple rollout files, its UUID resolves to the most recently updated file;
 use the rollout ID for a particular historical file. Child-agent tasks are not
 silently combined with their parent.
+
+To review Claude Code work:
+
+```sh
+trajectory sessions --source claude --limit 20
+trajectory review --session CLAUDE_SESSION_UUID
+```
+
+Use `--source rollout` to list only Codex sessions. Claude subagent transcripts
+are separate sessions; select their returned Trajectory ID or the
+`PARENT_SESSION_UUID/agent-AGENT_ID` alias. Older sidechain files use `agent-AGENT_ID`.
+If a UUID exists in multiple sources or projects, select its returned Trajectory
+ID to pin the intended file. Discovery reads filenames and file metadata only;
+titles initially show session IDs, and the selected review reads the recorded
+title or first prompt.
 
 Review, summary, and trace responses include a `revision` for fixed follow-up
 reads. For example, use `span --revision REVISION --id SPAN_ID` to inspect the same
@@ -246,11 +265,29 @@ show the latest three entries, with omission counts in the API.
 
 ## Sources and measurement
 
-Rollout events provide turns, execution records, tool messages, and response
-usage. OTel provides supplementary runtime traces and logs when configured. The
-sources remain separate until reliable correlation can establish that merging
-will not double-count work. Raw OTel sessions can be discovered explicitly with
-`trajectory sessions --source otlp` and opened by their IDs.
+Codex rollout events provide turns, execution records, tool messages, and response
+usage. Claude Code transcripts provide user requests, assistant responses, tool
+calls/results, and usage. Internal OTel traces are not collected.
+
+Claude tool durations are inferred from the interval between a `tool_use` block
+and its matching `tool_result`, including transport and scheduling overhead.
+Human requests start turns; tool-result messages, compacted context, and hook
+metadata do not start extra turns. Recorded stop reasons or turn completion
+records close turns. When completion is missing, the next request closes the
+previous turn at its last recorded work, excluding the intervening idle gap.
+Inline sidechain messages are excluded from main-session analysis; dedicated
+subagent files can be reviewed separately. Thinking and response blocks do not
+invent model latency spans.
+
+Claude response usage is deduplicated by API message ID, using the latest
+recorded usage rather than summing repeated or streamed blocks. Normalized input
+includes ordinary input, cache writes, and cache reads; cached input counts reads
+only, and uncached input includes cache writes. See Anthropic's
+[token breakdown](https://platform.claude.com/docs/en/build-with-claude/prompt-caching#tracking-cache-performance).
+Reasoning tokens are reported only when recorded in usage details. Tool-result
+text is measured before viewer truncation, excluding encoded images/audio.
+Persisted-output references are shown as recorded; external output files are not
+opened or added to delivered-text totals.
 
 - Active time is the union of turn intervals. Gaps between turns are excluded.
   Category attribution shares overlap among foreground leaf spans; self time
@@ -315,7 +352,7 @@ go vet ./...
 npm run build
 ```
 
-Go owns rollout parsing, analysis, the shared review presentation, CLI commands,
+Go owns session parsing, analysis, the shared review presentation, CLI commands,
 and MCP. `public/` contains the browser UI. `test/helpers/` contains HTTP and
 process helpers used only by the JavaScript test suite. Tests cover attribution, snapshot persistence,
 filter parity, output delivery, navigation races, and stable rendering. Browser and agent integration tests launch the actual Go executable against

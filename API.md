@@ -1,6 +1,6 @@
 # Trajectory API
 
-One Go process owns on-demand rollout parsing, review calculations, and saved
+One Go process owns on-demand Codex/Claude Code parsing, review calculations, and saved
 investigations. The browser and Go CLI/MCP commands share its query contract. CLI and MCP query
 the running `trajectory serve` process, preserving its revisions and database.
 Assets are embedded in Go. Source paths and source formats are not accepted from
@@ -39,6 +39,26 @@ Task analysis requires an explicit `session` (thread UUID or rollout ID), or a
 resolve to their most recently modified rollout; clients pin the returned rollout
 ID for follow-up reads. Child tasks remain separate. `sessions` reads only index,
 filename, and file metadata and never triggers analysis.
+
+Session `source` is `rollout` for Codex or `claude` for Claude Code; `sessions`
+accepts either value or `all`. Claude session UUIDs are accepted as aliases.
+Claude subagents have separate catalog IDs and aliases of
+`PARENT_SESSION_UUID/agent-AGENT_ID` (legacy files use `agent-AGENT_ID`). Their
+session metadata includes `parentId` when available and `agentId`. These IDs never
+resolve a subagent through its parent's UUID. If aliases collide across sources
+or project directories, the most recently modified file wins; use its catalog ID
+to pin a specific file.
+
+Claude parsing pairs `tool_use.id` with `tool_result.tool_use_id`. Span timing
+is `source=call-pair`, not an execution duration. Response usage is replaced by
+API `message.id` across streamed/repeated assistant blocks. Normalized
+`input_tokens = input_tokens + cache_creation_input_tokens + cache_read_input_tokens`,
+`cached_input_tokens = cache_read_input_tokens`, and
+`cache_write_input_tokens = cache_creation_input_tokens`. Thinking tokens are
+retained only if the usage details record them. User tool results do not start
+turns; synthetic context and inline sidechains do not add foreground turns or
+usage. Dedicated subagent transcripts remain separate. Claude files use the same
+record, cache, revision, and saved-investigation limits as Codex files.
 
 A selected rollout is parsed synchronously through the byte length observed at
 request start. Complete-record offsets and parser state are cached in memory;

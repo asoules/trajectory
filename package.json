@@ -1,10 +1,10 @@
 {
   "name": "codex-trajectory",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "private": true,
   "type": "module",
-  "description": "Local Codex performance explorer and agent-native profiler",
+  "description": "Local Codex and Claude Code performance explorer and agent-native profiler",
   "scripts": {
     "build": "sh scripts/build.sh",
     "start": "./bin/trajectory serve",

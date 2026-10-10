@@ -63,6 +63,12 @@ func serve(args []string, diagnostics io.Writer) error {
 		homeDefault = filepath.Join(home, ".codex")
 	}
 	home := flags.String("home", homeDefault, "Codex data directory")
+	claudeDefault := os.Getenv("CLAUDE_CONFIG_DIR")
+	if claudeDefault == "" {
+		userHome, _ := os.UserHomeDir()
+		claudeDefault = filepath.Join(userHome, ".claude")
+	}
+	claudeHome := flags.String("claude-home", claudeDefault, "Claude Code data directory (empty disables discovery)")
 	demo := flags.Bool("demo", false, "use generated demo data only")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -83,6 +89,7 @@ func serve(args []string, diagnostics io.Writer) error {
 	}
 	defer db.close()
 	store := newStore(db, *home)
+	store.claudeHome = *claudeHome
 	if *demo {
 		if err := store.seedDemo(); err != nil {
 			return err

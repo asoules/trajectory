@@ -1,6 +1,6 @@
 ---
 name: trajectory
-description: Review Codex task performance with Trajectory. Use for time and token investigations of the current task, a task ID or deep link, or saved Trajectory evidence.
+description: Review Codex and Claude Code session performance with Trajectory. Use for time and token investigations of the current task, a session ID or deep link, or saved Trajectory evidence.
 ---
 
 # Trajectory
@@ -16,9 +16,16 @@ An explicit user target takes precedence over the current task:
 - **Current task / no target:** read `CODEX_THREAD_ID` from the execution
   environment and use it as `--session`. A task ID explicitly supplied by the
   host context is also suitable. The query requires an explicit task; `latest` is not supported.
-- **Task ID:** pass the Codex thread UUID or Trajectory rollout ID directly as
+- **Task ID:** pass the Codex thread UUID, Claude Code session UUID, or Trajectory session ID directly as
   `--session`. Thread UUIDs resolve to the most recently updated rollout file;
   a rollout ID pins a particular historical file. Child tasks remain separate.
+- **Claude Code:** use a session UUID explicitly supplied by the user or host.
+  Otherwise discover with `sessions --source claude --q TEXT --limit 10`.
+  Do not assume `CODEX_THREAD_ID` identifies a Claude session. Subagents have
+  separate Trajectory IDs; use the ID returned by discovery. Tool timing is
+  inferred from call/result timestamps. Repeated assistant blocks share response
+  usage; cache reads are a subset of normalized input and cache writes count as
+  uncached input. Do not infer exact execution or model latency from transcripts.
 - **Codex task deep link:** extract and URL-decode the task/thread ID from its
   path or explicitly named task/thread query parameter, then use `--session`.
   A project, host, share token, or span ID is not a task ID. If a share link has

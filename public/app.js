@@ -163,7 +163,7 @@ function renderSessions() {
     rows
       .map(
         (s) =>
-          `<button class="session ${s.id === state.id ? "active" : ""}" data-session="${escape(s.id)}"><div class="session-title">${escape(s.title)}</div><div class="session-meta"><span>${s.recent ? '<i class="dot"></i>Recently updated' : s.archived ? "Archived" : "Historical"}</span><span>${new Date(s.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div></button>`,
+          `<button class="session ${s.id === state.id ? "active" : ""}" data-session="${escape(s.id)}"><div class="session-title">${escape(s.title)}</div><div class="session-meta"><span>${s.source === "claude" ? "Claude Code · " : "Codex · "}${s.recent ? '<i class="dot"></i>Recently updated' : s.archived ? "Archived" : "Historical"}</span><span>${new Date(s.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div></button>`,
       )
       .join("") || '<div class="empty">No matching sessions.</div>';
   $("#more-sessions").classList.toggle("hidden", state.next == null);

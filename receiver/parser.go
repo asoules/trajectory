@@ -408,7 +408,7 @@ func (s *parseState) materialize(ctx context.Context, now float64) (M, error) {
 		start = math.Min(start, num(t["start"]))
 	}
 	result := clone(s.Meta)
-	for k, v := range (M{"title": s.Title, "status": status, "start": start, "end": horizon, "lastEvent": s.Last, "turns": turns, "spans": selected, "tokens": tokens, "diagnostics": M{"records": s.Lines, "malformed": s.Malformed, "explicitSpans": explicit, "inferredSpans": inferred}}) {
+	for k, v := range (M{"title": choose(s.Meta["title"], s.Title), "status": status, "start": start, "end": horizon, "lastEvent": s.Last, "turns": turns, "spans": selected, "tokens": tokens, "diagnostics": M{"records": s.Lines, "malformed": s.Malformed, "explicitSpans": explicit, "inferredSpans": inferred}}) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}

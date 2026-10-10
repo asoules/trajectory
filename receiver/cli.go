@@ -13,12 +13,12 @@ import (
 	"time"
 )
 
-const cliHelp = `Trajectory — local Codex performance review
+const cliHelp = `Trajectory — local Codex and Claude Code performance review
 
-trajectory serve [-home DIR] [-db FILE] [-port 4318] [-demo]
+trajectory serve [-home DIR] [-claude-home DIR] [-db FILE] [-port 4318] [-demo]
 trajectory version
 trajectory review --session THREAD_ID [--since ISO] [--details] [--json]
-trajectory sessions [--q TEXT] [--limit 20]
+trajectory sessions [--source claude|rollout] [--q TEXT] [--limit 20]
 trajectory summary --session THREAD_ID [--top 8]
 trajectory spans --session THREAD_ID [--turnId ID] [--sort duration]
 trajectory span --session THREAD_ID --id SPAN_ID [--maxChars 2000]
